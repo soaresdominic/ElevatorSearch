@@ -8,6 +8,8 @@ class KnowledgeBase:
         self.serviceMap = self.makeServiceMap(people, elevators)
         self.numPeople = numPeople
         self.initFloors = self.getInitFloors(people)
+        self.commonFloor = 5
+        
 
 
     def getInitFloors(self, people):
