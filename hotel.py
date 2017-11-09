@@ -15,8 +15,7 @@ class hotel:
             if(i == 4 or i == 6 or i == 7):
                 f = floor(i, True)
             else:
-                f = floor(i, True)
-                #f = floor(i, False)
+                f = floor(i, False)
             self.floors.append(f)
         
         e1 = elevator(5, [1,2,3,4,5,6], "e1", 1)
@@ -178,26 +177,35 @@ class hotel:
                         pNum = 0
                         for p in e.occupants:  #for each person in the elevator
                             if(p.goalFloor == e.currentFloor and floor.number in e.services):  #if persons goal floor is this floor, offload
-                                #print(p.goalFloor, floor.number)
-                                #print("offload")
-                                moveS = ("add person " + p.name + " to floor " + str(floor.number))
-                                newState = copy.deepcopy(self)
-                                p = newState.floors[floor.number-1].elevators[eNum].occupants.pop(pNum) #delete person from elevator
-                                p.currentFloor = floor.number
-                                newState.floors[floor.number-1].occupants.append(p)
-                                newState.floors[floor.number-1].elevators[eNum].currentOccupancy -= 1
-                                moves.append([newState, moveS])
+                                hasEmployee = False
+                                for p in floor.occupants:
+                                    if(p.employee):
+                                        hasEmployee = True
+
+                                if(not floor.secured or hasEmployee or p.guest == False):
+                                    moveS = ("add person " + p.name + " to floor " + str(floor.number))
+                                    newState = copy.deepcopy(self)
+                                    p = newState.floors[floor.number-1].elevators[eNum].occupants.pop(pNum) #delete person from elevator
+                                    p.currentFloor = floor.number
+                                    newState.floors[floor.number-1].occupants.append(p)
+                                    newState.floors[floor.number-1].elevators[eNum].currentOccupancy -= 1
+                                    moves.append([newState, moveS])
+
 
                             elif(e not in self.KB.serviceMap[p.name][2] and e not in self.KB.serviceMap[p.name][0] and floor.number in e.services):  #if this elevator is not in that persons goal elevators
-                                #print(p.goalFloor, floor.number)
-                                #print("offload")
-                                moveS = ("add person " + p.name + " to floor " + str(floor.number))
-                                newState = copy.deepcopy(self)
-                                p = newState.floors[floor.number-1].elevators[eNum].occupants.pop(pNum) #delete person from elevator
-                                p.currentFloor = floor.number
-                                newState.floors[floor.number-1].occupants.append(p)
-                                newState.floors[floor.number-1].elevators[eNum].currentOccupancy -= 1
-                                moves.append([newState, moveS])
+                                hasEmployee = False
+                                for p in floor.occupants:
+                                    if(p.employee):
+                                        hasEmployee = True
+
+                                if(not floor.secured or hasEmployee or p.guest == False):
+                                    moveS = ("add person " + p.name + " to floor " + str(floor.number))
+                                    newState = copy.deepcopy(self)
+                                    p = newState.floors[floor.number-1].elevators[eNum].occupants.pop(pNum) #delete person from elevator
+                                    p.currentFloor = floor.number
+                                    newState.floors[floor.number-1].occupants.append(p)
+                                    newState.floors[floor.number-1].elevators[eNum].currentOccupancy -= 1
+                                    moves.append([newState, moveS])
 
                             pNum += 1
                     eNum += 1
