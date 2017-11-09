@@ -30,7 +30,7 @@ class hotel:
         for e in elevators:
             self.floors[e.currentFloor-1].elevators.append(e)
             
-        p1 = person(1, "g", "p1", 10)
+        p1 = person(1, "v", "p1", 10)
         p2 = person(7, "e", "p2", 6)
         p3 = person(3, "e", "p3", 9)
         p4 = person(7, "e", "p4", 8)
@@ -43,7 +43,7 @@ class hotel:
         p11 = person(1, "e", "p11", 3)
         p12 = person(1, "e", "p12", 4)
         p13 = person(6, "e", "p13", 2)
-        p14 = person(8, "g", "p14", 1)
+        p14 = person(8, "v", "p14", 1)
         p15 = person(9, "g", "p15", 2)
         p16 = person(2, "e", "p16", 1)
         p17 = person(5, "e", "p17", 7)
@@ -212,9 +212,6 @@ class hotel:
         return moves
 
 
-
-
-
     def checkForGoal(self):
         numPeople = 0
         for floor in self.floors:
@@ -229,26 +226,138 @@ class hotel:
 
 
 
-
-
-    #for each person
-    #if they are on a floor that is not where they wanna go, +5
-    #if they are in an elevator 0
-    #if they are on the floor they wanna go -5
-    #EACH MOVE NEEDS TO CHANGE THE HEURISTIC
-
     def getHeur(self):
         value = 0
-        pAtGoal = 0
         global heurFlag
 
         if(heurFlag == 0):  #if at beginning - move people with 2 elevators to floor 5
             for floor in self.floors:  #for each floor
                 for p in floor.occupants:  #for each person on the floor
-                    if(len(self.KB.serviceMap[p.name][0]) == 0):  #they need 2 elevators
-                        if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor = bad
-                            value += 100
+                    if(p.vip == True):
+                        if(len(self.KB.serviceMap[p.name][0]) == 0):  #they need 2 elevators and are a vip
+                            if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor = bad
+                                value += 10
 
+                                elevatorFloorNums = []
+                                for f in self.floors:  #for each floor
+                                    for e in floor.elevators:  #for each elevator
+                                        if(e.currentOccupancy < e.capacity and floor.number in e.services):  #if it can load the person
+                                            elevatorFloorNums.append(abs(floor.number - f.number))
+                                if(len(elevatorFloorNums) > 0):
+                                    value += min(elevatorFloorNums)
+
+                            elif(not floor.number == self.KB.initFloors[p.name] and not floor.number == self.KB.commonFloor):  #if they are on some random floor = really bad
+                                value += 20
+                            elif(floor.number == self.KB.commonFloor):  #if they are on the common floor = good
+                                value -= 10
+                    else:
+                        value -= 100
+
+                for e in floor.elevators:  #for each elevator on the floor
+                    for per in e.occupants:  #for each person in the elevator
+                        if(per.vip == True):
+                            if(len(self.KB.serviceMap[per.name][0]) == 0):  #if they need 2 elevators
+                                value += abs(floor.number - self.KB.commonFloor)
+                            else:  #if they need 1
+                                value += 0  #change if necessary
+                        else:
+                            value += 200
+
+        ################################################
+
+        if(heurFlag == 1):  #if everyone is on a floor that a goal elevator services
+            for floor in self.floors:  #for each floor
+                for p in floor.occupants:  #for each person on the floor
+                    if(p.vip == True):
+                        if(p.goalFloor == floor.number):  #if they are on their goal floor
+                            value -= 1000  #goal floor
+
+                        else:
+                            if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor
+                                value += 300  #still at their start
+                            else:  #they are on a middle floor waiting to be picked up
+                                value -= abs(self.KB.initFloors[p.name] - floor.number) * 5
+
+                            #move elevators towards this person
+                            elevatorFloorNums = []
+                            for f in self.floors:  #for each floor
+                                for e in floor.elevators:  #for each elevator
+                                    if(e.currentOccupancy < e.capacity and floor.number in e.services):  #if it can load the person
+                                        elevatorFloorNums.append(abs(floor.number - f.number))
+                            if(len(elevatorFloorNums) > 0):
+                                value += min(elevatorFloorNums)
+                                #print(value) 
+                    else:
+                        value -= 1000
+
+
+            for f in self.floors:  #for each floor
+                for e in f.elevators:  #for each elevator
+                    tmpHigh = []
+                    for per in e.occupants:  #for each person in elevator
+                        if(per.vip == True):
+                            #make it better a person gets in a goal elevator, not much for nothing for non goal
+                            if(e in self.KB.serviceMap[per.name][2] or e in self.KB.serviceMap[per.name][0]):  #if its a goal elevator
+                                #print("goal elevator")
+                                value -= 500  #make it much better that a person gets in an elevator if its a goal elevator but not better than getting off
+                            else:
+                                value -= 0
+                            value += abs(e.currentFloor - per.goalFloor)
+                        else:
+                            value += 2000
+
+        ##################################################
+        ##################################################
+
+        if(heurFlag == 2):  #if at beginning after taking vips - move people with 2 elevators to floor 5
+            for floor in self.floors:  #for each floor
+                for p in floor.occupants:  #for each person on the floor
+                    if(p.vip == False):
+                        if(len(self.KB.serviceMap[p.name][0]) == 0):  #they need 2 elevators
+                            if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor = bad
+                                value += 1000
+
+                                elevatorFloorNums = []
+                                for f in self.floors:  #for each floor
+                                    for e in floor.elevators:  #for each elevator
+                                        if(e.currentOccupancy < e.capacity and floor.number in e.services):  #if it can load the person
+                                            elevatorFloorNums.append(abs(floor.number - f.number))
+                                if(len(elevatorFloorNums) > 0):
+                                    value += min(elevatorFloorNums)
+
+                            elif(not floor.number == self.KB.initFloors[p.name] and not floor.number == self.KB.commonFloor):  #if they are on some random floor = really bad
+                                value += 2000
+                            elif(floor.number == self.KB.commonFloor):  #if they are on the common floor = good
+                                value -= 1000
+
+                for e in floor.elevators:  #for each elevator on the floor
+                    for per in e.occupants:  #for each person in the elevator
+                        if(per.vip == False):
+                            if(len(self.KB.serviceMap[per.name][0]) == 0):  #if they need 2 elevators
+                                value += abs(floor.number - self.KB.commonFloor)
+                            else:  #if they need 1
+                                value += 0  #change if necessary
+                        else:
+                            value += 1000
+
+        ##################################################
+
+
+        if(heurFlag == 3):  #if everyone is on a floor that a goal elevator services
+            for floor in self.floors:  #for each floor
+                for p in floor.occupants:  #for each person on the floor
+                    if(p.vip == False):
+                        if(p.goalFloor == floor.number):  #if they are on their goal floor
+                            value -= 1000  #goal floor
+
+                        else:
+                            if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor
+                                value += 300  #still at their start
+                            else:  #they are on a middle floor waiting to be picked up
+                                value -= abs(self.KB.initFloors[p.name] - floor.number) * 5
+                                value += 0
+
+                            #move elevators towards this person
                             elevatorFloorNums = []
                             for f in self.floors:  #for each floor
                                 for e in floor.elevators:  #for each elevator
@@ -257,87 +366,69 @@ class hotel:
                             if(len(elevatorFloorNums) > 0):
                                 value += min(elevatorFloorNums)
 
-
-
-
-                        elif(not floor.number == self.KB.initFloors[p.name] and not floor.number == self.KB.commonFloor):  #if they are on some random floor = really bad
-                            value += 200
-                        elif(floor.number == self.KB.commonFloor):  #if they are on the common floor = good
-                            value -= 100
-
-                for e in floor.elevators:  #for each elevator on the floor
-                    for per in e.occupants:  #for each person in the elevator
-                        if(len(self.KB.serviceMap[per.name][0]) == 0):  #if they need 2 elevators
-                            value += 0
-                            value += abs(floor.number - self.KB.commonFloor)
-                        else:  #if they need 1
-                            value += 0  #change if necessary
-
-        ##################################################
-
-
-        if(heurFlag == 1):  #if everyone is on a floor that a goal elevator services
-            for floor in self.floors:  #for each floor
-                for p in floor.occupants:  #for each person on the floor
-                    if(p.goalFloor == floor.number):  #if they are on their goal floor
-                        pAtGoal += 1
-                        value -= 1000  #goal floor
-
-                    else:
-                        if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor
-                            value += 300  #still at their start
-                        else:  #they are on a middle floor waiting to be picked up
-                            value -= abs(self.KB.initFloors[p.name] - floor.number) * 5
-                            value += 0
-
-                        #move elevators towards this person
-                        elevatorFloorNums = []
-                        for f in self.floors:  #for each floor
-                            for e in floor.elevators:  #for each elevator
-                                if(e.currentOccupancy < e.capacity and floor.number in e.services):  #if it can load the person
-                                    elevatorFloorNums.append(abs(floor.number - f.number))
-                        if(len(elevatorFloorNums) > 0):
-                            value += min(elevatorFloorNums)
-                            #print(value) 
-
-
             for f in self.floors:  #for each floor
                 for e in f.elevators:  #for each elevator
                     tmpHigh = []
                     for per in e.occupants:  #for each person in elevator
-                        #make it better a person gets in a goal elevator, not much for nothing for non goal
-                        if(e in self.KB.serviceMap[per.name][2] or e in self.KB.serviceMap[per.name][0]):  #if its a goal elevator
-                            #print("goal elevator")
-                            value -= 500  #make it much better that a person gets in an elevator if its a goal elevator but not better than getting off
+                        if(per.vip == False):
+                            #make it better a person gets in a goal elevator, not much for nothing for non goal
+                            if(e in self.KB.serviceMap[per.name][2] or e in self.KB.serviceMap[per.name][0]):  #if its a goal elevator
+                                #print("goal elevator")
+                                value -= 500  #make it much better that a person gets in an elevator if its a goal elevator but not better than getting off
+                            else:
+                                value -= 0
+                            value += abs(e.currentFloor - per.goalFloor)
                         else:
-                            #value -= 10
-                            value -= 0
-                        value += abs(e.currentFloor - per.goalFloor)
+                            value += 1000
 
         return value
 
 
     def checkFlag(self):
         global heurFlag
-        if(heurFlag == 0):
-            numPeopleNeedCommonEl = 0
-            for person, el in self.KB.serviceMap.items():
-                if(len(el[0]) == 0):  #if they need 2 elevators
-                    numPeopleNeedCommonEl += 1
 
-            iter = 0
-            if(len(self.floors[4].occupants) >= numPeopleNeedCommonEl):  #if there are the number of people necessary at the hub
-                for person in self.floors[4].occupants:  #for each person on the hub floor
-                    if(len(self.KB.serviceMap[person.name][0]) > 0):  #if they dont need 2 elevators
-                        return 0
-                    else:
-                        iter += 1
-                if(iter == numPeopleNeedCommonEl):
-                    return 1
-            else:
-                return 0
-        else:
+        if(heurFlag == 0):
+            for floor in self.floors:  #for each floor
+                for person in floor.occupants:  #for each person
+                    if(person.vip == True and len(self.KB.serviceMap[person.name][0]) == 0):  #if its a vip who has no elevator to go all the way
+                        if(not floor.number == 5):  #if they are not on the 5th floor hub
+                            return 0
+
+                for e in floor.elevators:  #for each elevator
+                    for per in e.occupants:
+                        if(per.vip == True):  #if a vip is in an elevator
+                            return 0
             return 1
+
+
+        elif(heurFlag == 1):
+            for floor in self.floors:  #for each floor
+                for person in floor.occupants:  #for each person
+                    if(person.vip == True):  #if its a vip
+                        if(not floor.number == person.goalFloor):  #if they are not on their goal floor
+                            return 1
+
+                for e in floor.elevators:  #for each elevator
+                    for per in e.occupants:
+                        if(per.vip == True):  #if a vip is in an elevator
+                            return 1
+            return 2
+
+        elif(heurFlag == 2):  #make sure all people not vips who need more than one elevator are on floor 5
+            for floor in self.floors:  #for each floor
+                for person in floor.occupants:  #for each person
+                    if(person.vip == False and len(self.KB.serviceMap[person.name][0]) == 0):  #if its not vip who has no elevator to go all the way
+                        if(not floor.number == 5):  #if they are not on the 5th floor hub
+                            return 2
+
+                for e in floor.elevators:  #for each elevator
+                    for per in e.occupants:
+                        if(per.vip == False and len(self.KB.serviceMap[per.name][0]) == 0):  #if a non vip is in an elevator who needs another el
+                            return 2
+            return 3
+
+        else:
+            return 3
 
 
 
@@ -354,14 +445,22 @@ def AStar2(state):
     heapq.heappush(h, (state.getHeur(), state, "", 0))
     val = set([])
     tmp = 10000000
+    tmpf = 0
     while(len(h) > 0):
         curr_state = heapq.heappop(h)
+
+        if(not heurFlag == tmpf):
+            val = set([])
+            tmp = 100000000
+            #print curr_state[0]
 
         val.add(curr_state[0])
         if(min(val) < tmp):
             print(min(val))
             printState(curr_state[1])
             tmp = min(val)
+
+        tmpf = heurFlag
         
 
         curr_st = curr_state[1]
@@ -373,15 +472,16 @@ def AStar2(state):
             state = st[0]
             move = st[1]
             if(state.checkForGoal()):  #check if its the solution
-                print(state.getHeur())
+                #print(state.getHeur())
                 printState(state)
                 return curr_moves + move + "\n"
             elif(not state.checkFlag() == heurFlag):  #if the heurflag changes, delete rest of heap and change global flag
                 h = []
-                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
                 heurFlag = state.checkFlag()
-                print("flag has changed!!!!!!!!!!!!!!!!!!!")
-                print(len(h))
+                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
+                #print("flag has changed!!!!!!!!!!!!!!!!!!!")
+                #print(heurFlag)
+                #print(len(h))
                 #exit()
                 break
             else:

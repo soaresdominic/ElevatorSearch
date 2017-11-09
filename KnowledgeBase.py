@@ -9,8 +9,17 @@ class KnowledgeBase:
         self.numPeople = numPeople
         self.initFloors = self.getInitFloors(people)
         self.commonFloor = 5
-        
 
+        #self.people = self.makePeopleList(people)  #dictionary of people name, status as employee, guest, vip
+
+    """
+    def makePeopleList(self, people):
+        pd = {}
+        for person in people:
+            if(pd[person[2]] == None):
+                pd[person[2]] = person[1]
+        return pd
+    """
 
     def getInitFloors(self, people):
         initFloors = {}
