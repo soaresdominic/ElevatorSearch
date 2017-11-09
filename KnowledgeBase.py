@@ -7,6 +7,14 @@ class KnowledgeBase:
     def __init__(self, people, elevators, numPeople):
         self.serviceMap = self.makeServiceMap(people, elevators)
         self.numPeople = numPeople
+        self.initFloors = self.getInitFloors(people)
+
+
+    def getInitFloors(self, people):
+        initFloors = {}
+        for person in people:
+            initFloors[person.name] = person.currentFloor
+        return initFloors
 
 
     def makeServiceMap(self, people, elevators):
