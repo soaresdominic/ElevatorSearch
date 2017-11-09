@@ -4,8 +4,9 @@
 
 class KnowledgeBase:
     
-    def __init__(self, people, elevators):
+    def __init__(self, people, elevators, numPeople):
         self.serviceMap = self.makeServiceMap(people, elevators)
+        self.numPeople = numPeople
 
 
     def makeServiceMap(self, people, elevators):
@@ -23,6 +24,7 @@ class KnowledgeBase:
                                 serviceM[person.name][1].append(elevator)  #append the first elevator to the start list
                                 serviceM[person.name][2].append(el)  #append the second elevator to the goal list
         return serviceM
+
 
 
     def printMap(self):

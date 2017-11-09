@@ -63,7 +63,7 @@ class hotel:
         people.append(p8)
         people.append(p9)
         people.append(p10)
-        """
+        
         people.append(p11)
         people.append(p12)
         people.append(p13)
@@ -75,11 +75,11 @@ class hotel:
         people.append(p18)
         people.append(p19)
         people.append(p20)
-        """
+        
         for p in people:
             self.floors[p.currentFloor-1].occupants.append(p)
 
-        self.KB = KnowledgeBase(people, elevators)
+        self.KB = KnowledgeBase(people, elevators, numPeople)
         #KB.printMap()
         #exit()
 
@@ -122,53 +122,47 @@ class hotel:
             if(len(floor.elevators) > 0 and len(floor.occupants) > 0):  #if theres an elevator on the floor and people waiting on the floor
                 pNum = 0
                 for person in floor.occupants:  #for each person on the floor
-                    if(len(self.KB[person.name][0]) > 0):  #if the person has an elevator to take it all the way
+                    if(len(self.KB.serviceMap[person.name][0]) > 0):  #if the person has an elevator to take it all the way
                         eNum = 0
                         for elevator in floor.elevators:  #for each elevator on the floor
-                            if(elevator in self.KB[person.name][0]):  #if the elevaor is in that list
-                                moveS = ("add person " + p.name + " to " + e.name)
+                            if(elevator in self.KB.serviceMap[person.name][0]):  #if the elevaor is in that list
+                                moveS = ("add person " + person.name + " to " + elevator.name)
                                 newState = copy.deepcopy(self)
                                 p = newState.floors[floor.number-1].occupants.pop(pNum)  #delete person waiting on the floor
+                                p.currentFloor = -1
                                 newState.floors[floor.number-1].elevators[eNum].occupants.append(p)
                                 newState.floors[floor.number-1].elevators[eNum].currentOccupancy += 1
                                 #print(newState.getHeur())
                                 moves.append([newState, moveS])
                             eNum += 1
-                    else:  #they have to take two
-
-                    pNum += 1
-
-                    if(len(KB[person.name][0]) == 0):  #if it doesnt have an elevator to take it all the way
-
-
-
-
-                eNum = 0
-                for e in floor.elevators:  #for each elevator
-                    if(e.currentOccupancy < e.capacity and (floorNum in e.services)):
-                        pNum = 0
-                        for p in floor.occupants:  #for each person
-                            #print(p.goalFloor, e.services)
-                            if(p.goalFloor != floorNum):  #keep person there if thats where they wanna go
-                                #print(p.goalFloor, e.services)
-                                #print("load")
-                                moveS = ("add person " + p.name + " to " + e.name)
+                    else:  #they have to take at least two
+                        eNum = 0
+                        for elevator in floor.elevators:  #for each elevator on the floor
+                            if(elevator in self.KB.serviceMap[person.name][2]):  #if the elevaor is in goal list
+                                moveS = ("add person " + person.name + " to " + elevator.name)
                                 newState = copy.deepcopy(self)
-                                p = newState.floors[floorNum-1].occupants.pop(pNum)  #delete person waiting on the floor
-                                newState.floors[floorNum-1].elevators[eNum].occupants.append(p)
-                                newState.floors[floorNum-1].elevators[eNum].currentOccupancy += 1
+                                p = newState.floors[floor.number-1].occupants.pop(pNum)  #delete person waiting on the floor
+                                p.currentFloor = -1
+                                newState.floors[floor.number-1].elevators[eNum].occupants.append(p)
+                                newState.floors[floor.number-1].elevators[eNum].currentOccupancy += 1
                                 #print(newState.getHeur())
                                 moves.append([newState, moveS])
-                            #else:
-                                #print("dont load because he's cool", p.name, p.currentFloor, p.goalFloor)
-                            pNum += 1
-                    eNum += 1
-            floorNum += 1
-
-
-
-
-
+                                continue
+                            eNum += 1
+                        eNum = 0
+                        for elevator in floor.elevators:  #for each elevator on the floor
+                            if(elevator in self.KB.serviceMap[person.name][1]):  #if the elevaor is in start list
+                                moveS = ("add person " + person.name + " to " + elevator.name)
+                                newState = copy.deepcopy(self)
+                                p = newState.floors[floor.number-1].occupants.pop(pNum)  #delete person waiting on the floor
+                                p.currentFloor = -1
+                                newState.floors[floor.number-1].elevators[eNum].occupants.append(p)
+                                newState.floors[floor.number-1].elevators[eNum].currentOccupancy += 1
+                                #print(newState.getHeur())
+                                moves.append([newState, moveS])
+                                continue
+                            eNum += 1
+                    pNum += 1
 
 
         """
@@ -200,46 +194,44 @@ class hotel:
         """
 
 
-
+        #if an elevator has a person
+            #if that person's goal floor is that floor, offload
+            #else if that elevator is not in that persons goal elevators
+                #drop him off here
 
 
         #offload person
-        floorNum = 1
-        for floor in self.floors:
+        for floor in self.floors:  #for each floor
             if(len(floor.elevators) > 0):  #if theres an elevator on the floor
                 eNum = 0
-                for e in floor.elevators:  #for each elevator
-                    if(e.services.__contains__(floorNum) and e.currentOccupancy > 0):
+                for e in floor.elevators:  #for each elevator on the floor
+                    if((floor.number in e.services) and e.currentOccupancy > 0):  #if it has people and services the floor
                         pNum = 0
                         for p in e.occupants:  #for each person in the elevator
-                            if(True):
-                                #print(p.goalFloor, floorNum)
+                            if(p.goalFloor == e.currentFloor):  #if persons goal floor is this floor, offload
+                                #print(p.goalFloor, floor.number)
                                 #print("offload")
-                                moveS = ("add person " + p.name + " to floor " + str(floorNum))
+                                moveS = ("add person " + p.name + " to floor " + str(floor.number))
                                 newState = copy.deepcopy(self)
-                                p = newState.floors[floorNum-1].elevators[eNum].occupants.pop(pNum) #delete person from elevator
-
-                                """
-                                f = 0
-                                if(p.name == "p4" and floorNum == 8):
-                                    print("ppppppppppppppppppppppppp444444444444444444444444444444")
-                                    print(self.getHeur())
-                                    f = 1
-                                """
-
-                                newState.floors[floorNum-1].occupants.append(p)
-                                newState.floors[floorNum-1].elevators[eNum].currentOccupancy -= 1
-
-                                """
-                                if(f == 1):
-                                    print(newState.getHeur())
-                                """
-
+                                p = newState.floors[floor.number-1].elevators[eNum].occupants.pop(pNum) #delete person from elevator
+                                p.currentFloor = floor.number
+                                newState.floors[floor.number-1].occupants.append(p)
+                                newState.floors[floor.number-1].elevators[eNum].currentOccupancy -= 1
                                 moves.append([newState, moveS])
+
+                            elif(e not in self.KB.serviceMap[p.name][2] and e not in self.KB.serviceMap[p.name][0]):  #if this elevator is not in that persons goal elevators
+                                #print(p.goalFloor, floor.number)
                                 #print("offload")
+                                moveS = ("add person " + p.name + " to floor " + str(floor.number))
+                                newState = copy.deepcopy(self)
+                                p = newState.floors[floor.number-1].elevators[eNum].occupants.pop(pNum) #delete person from elevator
+                                p.currentFloor = floor.number
+                                newState.floors[floor.number-1].occupants.append(p)
+                                newState.floors[floor.number-1].elevators[eNum].currentOccupancy -= 1
+                                moves.append([newState, moveS])
+
                             pNum += 1
                     eNum += 1
-            floorNum += 1
         return moves
 
 
@@ -247,6 +239,21 @@ class hotel:
 
 
     def checkForGoal(self):
+        numPeople = 0
+        for floor in self.floors:
+            for person in floor.occupants:
+                if(not(person.currentFloor == person.goalFloor)):
+                    return False
+                else:
+                    numPeople += 1
+        print(numPeople, self.KB.numPeople)
+        if(numPeople == self.KB.numPeople):
+            return True
+
+
+
+
+        """
         floorNum = 1
         for floor in self.floors:
 
@@ -333,7 +340,7 @@ class hotel:
 
 
 
-    """
+    
     def checkForGoal(self):
         floorNum = 1
         for floor in self.floors:
@@ -448,13 +455,13 @@ class hotel:
             for p in floor.occupants:  #for each person
                 if(p.goalFloor == floor.number):  #make offloading good
                     pAtGoal += 1
-                    value -= 50
+                    value -= 500
                 else:
-                    value += 0
+                    value += abs(p.currentFloor - p.goalFloor)
                     elevatorFloorNums = []
                     for f in self.floors:  #for each floor
                         for e in floor.elevators:  #for each elevator
-                            if(e.currentOccupancy < e.capacity and e.services.__contains__(floor.number)):  #if it can load the person
+                            if(e.currentOccupancy < e.capacity and floor.number in e.services):  #if it can load the person
                                 elevatorFloorNums.append(abs(floor.number - f.number))
                     if(len(elevatorFloorNums) > 0):
                         value += min(elevatorFloorNums)
@@ -464,7 +471,12 @@ class hotel:
         for f in self.floors:  #for each floor
             for e in f.elevators:
                 for per in e.occupants:
-                    value -= 5  #make it 5 better that a person gets in an elevator
+                    #make it better a person gets in a goal elevator, not much for nothing for non goal
+                    if(e in self.KB.serviceMap[per.name][2] or e in self.KB.serviceMap[per.name][0]):
+                        value -= 100  #make it much better that a person gets in an elevator if its a goal elevator
+                    else:
+                        value -= 0
+                    value += abs(e.currentFloor - per.goalFloor) * 3
 
                 
         return value
@@ -550,6 +562,8 @@ def AStar2(state):
             #if(state.floors != curr_st.floors):
             if(True):
                 if(state.checkForGoal()):
+                    print(state.getHeur())
+                    printState(state)
                     return curr_moves + move + "\n"
                 #print(state.getHeur() + curr_depth)
 
