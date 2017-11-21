@@ -1,0 +1,83 @@
+from controller import Controller
+import logging
+from vanisher import Vanisher
+from betaGenerator import BetaGenerator
+from betaFloorSelector import BetaFloorSelector
+from floor import Floor
+from lift import Lift
+from building import Building
+import random
+import person
+
+
+##################### VERSION 1.1, 20/11/2017 ###########################
+
+"""---------------------------------------------------------------------------------------------"""
+HG=False #Don't hide goals from the controller
+
+
+########## START FLOOR DEFINITIONS ####################
+morningGroundFloorSelector=BetaFloorSelector(1,10) 
+morningGFGenerator=BetaGenerator(HG,7*3600,9*3600,morningGroundFloorSelector,5,5)
+# for i in range (0, 1000):
+#     print(morningGFGenerator.tick.__dict__)
+lunchGFGenerator=BetaGenerator(HG,12.5*3600,14*3600,morningGroundFloorSelector,5,5)
+
+dayOtherFloorSelector=BetaFloorSelector(0,10)
+dayOtherFloorGenerator=BetaGenerator(HG,8*3600,17*3600,dayOtherFloorSelector,2,2)
+
+vanisher=Vanisher()
+
+floors=[]
+groundFloor=Floor(0,[morningGFGenerator,lunchGFGenerator,dayOtherFloorGenerator],[vanisher])
+
+floors.append(groundFloor)
+for i in range(1,11):
+    vanisher=Vanisher()
+    dayOtherFloorSelector=BetaFloorSelector(0,10)
+    dayOtherFloorGenerator=BetaGenerator(HG,8*3600,17*3600,dayOtherFloorSelector,2,2)
+    lunchOtherFloorSelector=BetaFloorSelector(0,0)
+    lunchOtherFloorGenerator=BetaGenerator(HG,12*3600,13.5*3600,lunchOtherFloorSelector)
+    eveningOtherFloorSelector=BetaFloorSelector(0,0)
+    eveningOtherFloorGenerator=BetaGenerator(HG,16.5*3600,18*3600,eveningOtherFloorSelector)
+
+    f=Floor(i,[dayOtherFloorGenerator,lunchOtherFloorGenerator,eveningOtherFloorGenerator],[vanisher])
+    floors.append(f)
+    #print(floors)
+
+########## END FLOOR DEFINITIONS ####################
+########## START LIFT DEFINITIONS ####################
+l1=Lift(0,10,0,10,False,None) #this lift goes across all floors
+l2=Lift(0,10,0,10,False,None) #this lift goes across all floors
+l3=Lift(0,10,0,10,False,None) #this lift goes across all floors
+#l2=Lift(0,20,0,5,False,None)  #services the first 6 floors, more capacity
+#l3=Lift(0,5,3,10,False,None)  #services floor 4 - 10, less capacity
+########## END LIFT DEFINITIONS ####################
+
+########## REPLACE WITH OWN CONTROLLER####################
+controller=Controller()
+
+################################
+# peeps=set()
+# p=Person()
+# for i in range(0,3600):
+#     currentlocation=random.randint(0,10)
+#     goal=random.randint(0,10)
+#     p=Person(currentlocation,goal,i,HG)
+#     peep.add(p)
+#     print('bubblegum')
+
+
+# print(peep)
+########## BUILDING DEFINITION ####################
+startTime=int(7.5*3600)
+building=Building(floors,[l1,l2,l3],controller,startTime)
+#building=Building(floors,[l1],controller,startTime)
+
+########## RUN OVER A SINGLE 24 HOUR PERIOD####################
+for i in range(startTime,3600*24):
+#    logging.debug("TOTAL PEOPLE: %d",TOTPEOPLE)
+#    logging.debug("SERVED PEOPLE: %d",PEOPLESERVED)
+    building.tick()
+####################################################################
+#####GENERATING PEOPLES#########
