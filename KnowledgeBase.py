@@ -4,11 +4,11 @@
 
 class KnowledgeBase:
     
-    def __init__(self, people, elevators, numPeople):
+    def __init__(self, people, elevators):
         self.serviceMap = self.makeServiceMap(people, elevators)
-        self.numPeople = numPeople
         self.initFloors = self.getInitFloors(people)
         self.commonFloor = 5
+        self.numPeople = len(people)
 
         #self.people = self.makePeopleList(people)  #dictionary of people name, status as employee, guest, vip
 

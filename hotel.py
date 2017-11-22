@@ -5,11 +5,11 @@ from KnowledgeBase import KnowledgeBase
 import heapq
 import copy
 
-
+elevatorsG = []
+peopleG = []
 class hotel:
-    def __init__(self,numFloors,numElevators,numPeople):
-        #floors are a list of 2 lists that contains 0-n elevators, 0-n people, secure boolean
-        #floors are contained in larger list
+    def __init__(self,numFloors,numElevators):
+        global elevatorsG
         self.floors = []
         for i in range(1, numFloors+1):
             if(i == 4 or i == 6 or i == 7):
@@ -27,59 +27,17 @@ class hotel:
         elevators.append(e2)
         elevators.append(e3)
         elevators.append(e4)
+
+        elevatorsG.append(e1)
+        elevatorsG.append(e2)
+        elevatorsG.append(e3)
+        elevatorsG.append(e4)
+        
         for e in elevators:
             self.floors[e.currentFloor-1].elevators.append(e)
-            
-        p1 = person(1, "v", "p1", 10)
-        p2 = person(7, "e", "p2", 6)
-        p3 = person(3, "e", "p3", 9)
-        p4 = person(7, "e", "p4", 8)
-        p5 = person(2, "e", "p5", 7)
-        p6 = person(4, "e", "p6", 1)
-        p7 = person(3, "e", "p7", 1)
-        p8 = person(1, "e", "p8", 9)
-        p9 = person(10, "e", "p9", 5)
-        p10 = person(1, "e", "p10", 6)
-        p11 = person(1, "e", "p11", 3)
-        p12 = person(1, "e", "p12", 4)
-        p13 = person(6, "e", "p13", 2)
-        p14 = person(8, "v", "p14", 1)
-        p15 = person(9, "g", "p15", 2)
-        p16 = person(2, "e", "p16", 1)
-        p17 = person(5, "e", "p17", 7)
-        p18 = person(1, "g", "p18", 10)
-        p19 = person(1, "e", "p19", 9)
-        p20 = person(1, "g", "p20", 7)
-        people = []
-        people.append(p1)
-        people.append(p2)
-        people.append(p3)
-        people.append(p4)
-        people.append(p5)
-        
-        people.append(p6)
-        people.append(p7)
-        people.append(p8)
-        people.append(p9)
-        people.append(p10)
-        
-        people.append(p11)
-        people.append(p12)
-        people.append(p13)
-        people.append(p14)
-        people.append(p15)
-        people.append(p16)
-        
-        people.append(p17)
-        people.append(p18)
-        people.append(p19)
-        people.append(p20)
-        
-        for p in people:
-            self.floors[p.currentFloor-1].occupants.append(p)
 
-        self.KB = KnowledgeBase(people, elevators, numPeople)
-        self.KB.printMap()
+        self.KB = None
+        #self.KB.printMap()
         #exit()
 
 
@@ -433,9 +391,45 @@ class hotel:
 
 
 def main():
-    h = hotel(10,4,20)
-    solution = AStar2(h)
-    print(solution)
+    h = hotel(10,4)
+    startDay(h)
+
+
+def startDay(state):
+    global elevatorsG
+    global peopleG
+    newPeople = []
+    listOfStates = []
+    currState = state
+    time = 1000
+    newPeople = generate()
+    while(True):
+        #r = raw_input("pause")
+        #newPeople = generate()  #list of list of attributes [[currentFloor, typep, name, goalFloor]...]
+        if(len(newPeople) > 0):  #if there is a new person
+            for p in newPeople:  #for each new person
+                ptmp = person(p[0], p[1], p[2], p[3])  #create the person
+                currState.floors[ptmp.currentFloor-1].occupants.append(ptmp)  #add them to the current state
+                #printState(currState)
+                peopleG.append(ptmp)
+            newPeople = []
+            currState.KB = KnowledgeBase(peopleG, elevatorsG)
+            #print("made KB")
+            listOfStates = AStar2(currState)  #get the next states to go to
+            #print(len(listOfStates))
+            listOfStates.pop(0)  #get rid of initial state we passed in
+            currState = listOfStates.pop(0)  #move forward 1
+            #printState(currState)
+        elif(len(listOfStates) > 0):  #if there are no new people get the next state
+            currState = listOfStates.pop(0)  #move forward 1
+            #printState(currState)
+        elif(time > 2000):  #if done for the day
+            print("Done for the day")
+            break
+
+
+def generate():
+    return [[3, "e", "p3", 9]]
 
 
 
@@ -446,6 +440,7 @@ def AStar2(state):
     val = set([])
     tmp = 10000000
     tmpf = 0
+    listOfStates = []
     while(len(h) > 0):
         curr_state = heapq.heappop(h)
 
@@ -456,14 +451,14 @@ def AStar2(state):
 
         val.add(curr_state[0])
         if(min(val) < tmp):
-            print(min(val))
-            printState(curr_state[1])
+            #print(min(val))
+            #printState(curr_state[1])
             tmp = min(val)
 
         tmpf = heurFlag
         
-
         curr_st = curr_state[1]
+        listOfStates.append(curr_st)  #this is the solution moveset
         curr_moves = curr_state[2]
         curr_depth = curr_state[3]
         new_states = []
@@ -473,20 +468,20 @@ def AStar2(state):
             move = st[1]
             if(state.checkForGoal()):  #check if its the solution
                 #print(state.getHeur())
-                printState(state)
-                return curr_moves + move + "\n"
+                #printState(state)
+                return listOfStates
             elif(not state.checkFlag() == heurFlag):  #if the heurflag changes, delete rest of heap and change global flag
                 h = []
                 heurFlag = state.checkFlag()
-                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
+                heapq.heappush(h, (state.getHeur() + curr_depth, state, "listOfStates", curr_depth))
                 #print("flag has changed!!!!!!!!!!!!!!!!!!!")
                 #print(heurFlag)
                 #print(len(h))
                 #exit()
                 break
             else:
-                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
-    return curr_moves
+                heapq.heappush(h, (state.getHeur() + curr_depth, state, "listOfStates", curr_depth))
+    return listOfStates
 
 
 
