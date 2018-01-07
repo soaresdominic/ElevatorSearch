@@ -49,11 +49,11 @@ class KnowledgeBase:
             serviceM[person.name] = [[] for i in range(3)]  #start and end, start only, end only
             for elevator in elevators:  #for each elevator
                 if((person.startFloor in elevator.services) and (person.goalFloor in elevator.services)):  #if the elevator services both
-                    serviceM[person.name][0].append(elevator)  #append to start and end
+                    serviceM[person.name][0].append(elevator.name)  #append to start and end
                 if(person.startFloor in elevator.services and not(person.goalFloor in elevator.services)):  #if elevator just services the start floor
-                    serviceM[person.name][1].append(elevator)  #append to start
+                    serviceM[person.name][1].append(elevator.name)  #append to start
                 if(not(person.startFloor in elevator.services) and (person.goalFloor in elevator.services)):  #if elevator just services the end floor
-                    serviceM[person.name][2].append(elevator)  #append to start
+                    serviceM[person.name][2].append(elevator.name)  #append to start
         return serviceM
 
 
