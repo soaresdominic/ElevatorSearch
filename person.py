@@ -5,8 +5,9 @@ import numpy
 
 class person:
     
-    def __init__(self, currentFloor, type, name, goalFloor):
-        self.currentFloor = currentFloor
+    def __init__(self, startFloor, type, name, goalFloor):
+        self.startFloor = startFloor
+        self.currentFloor = startFloor
         self.name = name
         self.goalFloor = goalFloor
         self.guest = False

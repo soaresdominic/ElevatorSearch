@@ -4,6 +4,7 @@ from floor import floor
 from KnowledgeBase import KnowledgeBase
 import heapq
 import copy
+import random
 
 elevatorsG = []
 peopleG = []
@@ -19,7 +20,7 @@ class hotel:
             self.floors.append(f)
         
         e1 = elevator(5, [1,2,3,4,5,6], "e1", 1)
-        e2 = elevator(8, [1,2,3,4,5,6], "e2", 1)
+        e2 = elevator(8, [1,2,3,4,5,6], "e2", 2)
         e3 = elevator(3, [3,5,7,8,9,10], "e3", 10)
         e4 = elevator(5, [5,6,7,8,9,10], "e4", 10)
         elevators = []
@@ -73,7 +74,7 @@ class hotel:
             if(len(floor.elevators) > 0 and len(floor.occupants) > 0):  #if theres an elevator on the floor and people waiting on the floor
                 pNum = 0
                 for person in floor.occupants:  #for each person on the floor
-                    if(not(person.goalFloor == floor.number)):
+                    if(not(person.goalFloor == floor.number)):  #if they wanna get off the floor
                         if(len(self.KB.serviceMap[person.name][0]) > 0):  #if the person has an elevator to take it all the way
                             eNum = 0
                             for elevator in floor.elevators:  #for each elevator on the floor
@@ -321,6 +322,7 @@ class hotel:
                                 for e in floor.elevators:  #for each elevator
                                     if(e.currentOccupancy < e.capacity and floor.number in e.services):  #if it can load the person
                                         elevatorFloorNums.append(abs(floor.number - f.number))
+                                        #print(abs(floor.number - f.number))
                             if(len(elevatorFloorNums) > 0):
                                 value += min(elevatorFloorNums)
 
@@ -356,6 +358,7 @@ class hotel:
                     for per in e.occupants:
                         if(per.vip == True):  #if a vip is in an elevator
                             return 0
+            #print("   heurflag 0->1")
             return 1
 
 
@@ -370,6 +373,7 @@ class hotel:
                     for per in e.occupants:
                         if(per.vip == True):  #if a vip is in an elevator
                             return 1
+            #print("   heurflag 1->2")
             return 2
 
         elif(heurFlag == 2):  #make sure all people not vips who need more than one elevator are on floor 5
@@ -383,6 +387,7 @@ class hotel:
                     for per in e.occupants:
                         if(per.vip == False and len(self.KB.serviceMap[per.name][0]) == 0):  #if a non vip is in an elevator who needs another el
                             return 2
+            #print("   heurflag 2->3")
             return 3
 
         else:
@@ -398,38 +403,101 @@ def main():
 def startDay(state):
     global elevatorsG
     global peopleG
+    global heurFlag
     newPeople = []
     listOfStates = []
     currState = state
     time = 1000
-    newPeople = generate()
+    newPeople = [[3, "e", "p0", 9]]
     while(True):
-        #r = raw_input("pause")
-        #newPeople = generate()  #list of list of attributes [[currentFloor, typep, name, goalFloor]...]
-        if(len(newPeople) > 0):  #if there is a new person
-            for p in newPeople:  #for each new person
+        #print("pause")
+        r = raw_input("pause")
+        if(len(newPeople[0]) > 0):  #if there is a new person
+            for p in newPeople:  #for each new person list
                 ptmp = person(p[0], p[1], p[2], p[3])  #create the person
+                #print(ptmp)
                 currState.floors[ptmp.currentFloor-1].occupants.append(ptmp)  #add them to the current state
-                #printState(currState)
+                heurFlag = 0
+                printState(currState)
                 peopleG.append(ptmp)
-            newPeople = []
+            newPeople = []  #reset newPeople to empty
+
+            peopleG = updateGlobalPeople(currState)  #make info in globals current for the state
+            elevatorsG = updateGlobalElevators(currState)  #make info in globals current for the state
+
             currState.KB = KnowledgeBase(peopleG, elevatorsG)
+            currState.KB.printMap()
+
+            for f in currState.floors:
+                for e in f.elevators:
+                    print(e)
+
             #print("made KB")
             listOfStates = AStar2(currState)  #get the next states to go to
-            #print(len(listOfStates))
+            print("...done getting states")
+            #printState(listOfStates[0])
+            #printState(listOfStates[-1])
             listOfStates.pop(0)  #get rid of initial state we passed in
+            currState = listOfStates.pop(0)  #move forward 1 state
+            #printState(currState)
+        elif(len(listOfStates) > 1):  #if there are no new people get the next state
             currState = listOfStates.pop(0)  #move forward 1
             #printState(currState)
-        elif(len(listOfStates) > 0):  #if there are no new people get the next state
+        elif(len(listOfStates) == 1): #if we're at the last state
             currState = listOfStates.pop(0)  #move forward 1
-            #printState(currState)
+            printState(currState)
+            break
         elif(time > 2000):  #if done for the day
             print("Done for the day")
             break
+        time+=1
+        newPeople = generate(time)  #list of list of attributes [[currentFloor, typep, name, goalFloor]...]
 
 
-def generate():
-    return [[3, "e", "p3", 9]]
+#only need to change current floor
+def updateGlobalPeople(state):
+    return peopleG
+
+#only update current floor of elevator
+def updateGlobalElevators(state):
+    global elevatorsG
+    for e in elevatorsG:  #for each elevator
+        for floor in state.floors:  #for each floor
+            if(e in floor.elevators):  #if the elevator is on the floor
+                e.currentFloor = floor.number
+    return elevatorsG
+
+
+
+#generates a person
+def generate(time):
+    global peopleG
+    if(time < 1300):
+        rd = random.randint(1,1)
+        if(rd == 1):  #make the person
+            print("making a new person...")
+            ltmp = []
+            tmp = []
+            tmp.append(random.randint(1,10))  #start floor
+
+            typep = random.randint(1,3)  #type of person
+            if(typep == 1):
+                tmp.append("e")
+            elif(typep == 2):
+                tmp.append("e")
+            else:
+                tmp.append("e")
+
+            tmp.append("p" + str(len(peopleG)))  #name
+            tmp.append(random.randint(1,10))  #end floor            
+            ltmp.append(tmp)
+            print("Start: " + str(tmp[0]) + "  End: " + str(tmp[3]))
+            return ltmp
+        else:
+            return [[]]
+    else:
+        return [[]]
+    #return [[3, "e", "p3", 9]]
 
 
 
@@ -458,7 +526,7 @@ def AStar2(state):
         tmpf = heurFlag
         
         curr_st = curr_state[1]
-        listOfStates.append(curr_st)  #this is the solution moveset
+        listOfStates.append(curr_st)  #this is the solution moveset of states
         curr_moves = curr_state[2]
         curr_depth = curr_state[3]
         new_states = []
@@ -473,6 +541,7 @@ def AStar2(state):
             elif(not state.checkFlag() == heurFlag):  #if the heurflag changes, delete rest of heap and change global flag
                 h = []
                 heurFlag = state.checkFlag()
+                print(heurFlag)
                 heapq.heappush(h, (state.getHeur() + curr_depth, state, "listOfStates", curr_depth))
                 #print("flag has changed!!!!!!!!!!!!!!!!!!!")
                 #print(heurFlag)
