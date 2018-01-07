@@ -1,8 +1,3 @@
-from enum import Enum
-import random
-import numpy
-
-
 class person:
     
     def __init__(self, startFloor, type, name, goalFloor):

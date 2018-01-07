@@ -9,7 +9,7 @@ import random
 elevatorsG = []
 peopleG = []
 class hotel:
-    def __init__(self,numFloors,numElevators):
+    def __init__(self,numFloors):
         global elevatorsG
         self.floors = []
         for i in range(1, numFloors+1):
@@ -36,10 +36,7 @@ class hotel:
         
         for e in elevators:
             self.floors[e.currentFloor-1].elevators.append(e)
-
         self.KB = None
-        #self.KB.printMap()
-        #exit()
 
 
     def findMoves(self):
@@ -120,14 +117,6 @@ class hotel:
                         pNum += 1
 
 
-
-
-        #if an elevator has a person
-            #if that person's goal floor is that floor, offload
-            #else if that elevator is not in that persons goal elevators
-                #drop him off here
-
-
         #offload person
         for floor in self.floors:  #for each floor
             if(len(floor.elevators) > 0):  #if theres an elevator on the floor
@@ -150,7 +139,6 @@ class hotel:
                                     newState.floors[floor.number-1].occupants.append(p)
                                     newState.floors[floor.number-1].elevators[eNum].currentOccupancy -= 1
                                     moves.append([newState, moveS])
-
 
                             elif(e.name not in self.KB.serviceMap[p.name][2] and e.name not in self.KB.serviceMap[p.name][0] and floor.number in e.services):  #if this elevator is not in that persons goal elevators
                                 hasEmployee = False
@@ -198,6 +186,7 @@ class hotel:
                             if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor = bad
                                 value += 10
 
+                                #add distance to closest elevator that can load the person
                                 elevatorFloorNums = []
                                 for f in self.floors:  #for each floor
                                     for e in floor.elevators:  #for each elevator
@@ -230,7 +219,7 @@ class hotel:
                 for p in floor.occupants:  #for each person on the floor
                     if(p.vip == True):
                         if(p.goalFloor == floor.number):  #if they are on their goal floor
-                            value -= 1000  #goal floor
+                            value -= 1000 #goal floor
 
                         else:
                             if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor
@@ -257,6 +246,7 @@ class hotel:
                     for per in e.occupants:  #for each person in elevator
                         if(per.vip == True):
                             #make it better a person gets in a goal elevator, not much for nothing for non goal
+                            
                             if(e.name in self.KB.serviceMap[per.name][2] or e.name in self.KB.serviceMap[per.name][0]):  #if its a goal elevator
                                 #print("goal elevator")
                                 value -= 500  #make it much better that a person gets in an elevator if its a goal elevator but not better than getting off
@@ -266,7 +256,6 @@ class hotel:
                         else:
                             value += 2000
 
-        ##################################################
         ##################################################
 
         if(heurFlag == 2):  #if at beginning after taking vips - move people with 2 elevators to floor 5
@@ -302,7 +291,6 @@ class hotel:
 
         ##################################################
 
-
         if(heurFlag == 3):  #if everyone is on a floor that a goal elevator services
             for floor in self.floors:  #for each floor
                 for p in floor.occupants:  #for each person on the floor
@@ -311,7 +299,7 @@ class hotel:
                             value -= 1000  #goal floor
 
                         else:
-                            if(floor.number == self.KB.initFloors[p.name]):  #if they are on their intial floor
+                            if(p.currentFloor == p.startFloor):  #if they are on their intial floor
                                 value += 300  #still at their start
                             else:  #they are on a middle floor waiting to be picked up
                                 value -= abs(self.KB.initFloors[p.name] - floor.number) * 5
@@ -333,6 +321,7 @@ class hotel:
                     for per in e.occupants:  #for each person in elevator
                         if(per.vip == False):
                             #make it better a person gets in a goal elevator, not much for nothing for non goal
+                            
                             if(e.name in self.KB.serviceMap[per.name][2] or e.name in self.KB.serviceMap[per.name][0]):  #if its a goal elevator
                                 #print("goal elevator")
                                 value -= 500  #make it much better that a person gets in an elevator if its a goal elevator but not better than getting off
@@ -341,13 +330,11 @@ class hotel:
                             value += abs(e.currentFloor - per.goalFloor)
                         else:
                             value += 1000
-
         return value
 
 
     def checkFlag(self):
         global heurFlag
-
         if(heurFlag == 0):
             for floor in self.floors:  #for each floor
                 for person in floor.occupants:  #for each person
@@ -359,7 +346,6 @@ class hotel:
                     for per in e.occupants:
                         if(per.vip == True):  #if a vip is in an elevator
                             return 0
-            #print("   heurflag 0->1")
             return 1
 
 
@@ -374,7 +360,6 @@ class hotel:
                     for per in e.occupants:
                         if(per.vip == True):  #if a vip is in an elevator
                             return 1
-            #print("   heurflag 1->2")
             return 2
 
         elif(heurFlag == 2):  #make sure all people not vips who need more than one elevator are on floor 5
@@ -388,20 +373,19 @@ class hotel:
                     for per in e.occupants:
                         if(per.vip == False and len(self.KB.serviceMap[per.name][0]) == 0):  #if a non vip is in an elevator who needs another el
                             return 2
-            #print("   heurflag 2->3")
             return 3
-
         else:
             return 3
 
 
 
 def main():
-    h = hotel(10,4)
+    h = hotel(10)
     startDay(h)
 
 
 def startDay(state):
+    print("Starting the day...")
     global elevatorsG
     global peopleG
     global heurFlag
@@ -411,9 +395,9 @@ def startDay(state):
     time = 1000
     newPeople = [[3, "e", "p0", 9]]
     while(True):
-        #print("pause")
         #r = raw_input("pause")
         if(len(newPeople[0]) > 0):  #if there is a new person
+            print("Adding " + str(newPeople[0][2]) + " to the building...Start Floor: " + str(newPeople[0][0]) + " End Floor: " + str(newPeople[0][3]))
             for p in newPeople:  #for each new person list
                 ptmp = person(p[0], p[1], p[2], p[3])  #create the person
                 #print(ptmp)
@@ -428,33 +412,29 @@ def startDay(state):
 
             currState.KB = KnowledgeBase(peopleG, elevatorsG)
             #currState.KB.printMap()
-
-            """
-            for f in currState.floors:
-                for e in f.elevators:
-                    print(e)
-            """
-
             #print("made KB")
+
+            print("Computing the moveset solution...")
             listOfStates = AStar2(currState)  #get the next states to go to
-            print("...done getting states")
+            print("Done computing solution")
             #printState(listOfStates[0])
             #printState(listOfStates[-1])
             listOfStates.pop(0)  #get rid of initial state we passed in
             currState = listOfStates.pop(0)  #move forward 1 state
-            #printState(currState)
+            printState(currState)
         elif(len(listOfStates) > 1):  #if there are no new people get the next state
             currState = listOfStates.pop(0)  #move forward 1
+            #print("Test")
             #printState(currState)
         elif(len(listOfStates) == 1): #if we're at the last state
             currState = listOfStates.pop(0)  #move forward 1
             printState(currState)
             break
-        elif(time > 2000):  #if done for the day
+        elif(time > 10000):  #if done for the day
             print("Done for the day")
             break
         time+=1
-        print(time)
+        #print(time)
         newPeople = generate(time)  #list of list of attributes [[currentFloor, typep, name, goalFloor]...]
 
 
@@ -477,9 +457,8 @@ def updateGlobalElevators(state):
 def generate(time):
     global peopleG
     if(time < 1300):
-        rd = random.randint(1,10)
+        rd = random.randint(1,50)
         if(rd == 1):  #make the person
-            print("making a new person...")
             ltmp = []
             tmp = []
             tmp.append(random.randint(1,10))  #start floor
@@ -501,8 +480,6 @@ def generate(time):
             return [[]]
     else:
         return [[]]
-    #return [[3, "e", "p3", 9]]
-
 
 
 def AStar2(state):
@@ -530,6 +507,10 @@ def AStar2(state):
         tmpf = heurFlag
         
         curr_st = curr_state[1]
+
+        #print(heurFlag)
+        #printState(curr_st)
+
         listOfStates.append(curr_st)  #this is the solution moveset of states
         curr_moves = curr_state[2]
         curr_depth = curr_state[3]
@@ -540,30 +521,25 @@ def AStar2(state):
             move = st[1]
             if(state.checkForGoal()):  #check if its the solution
                 #print(state.getHeur())
+                print(curr_moves + move)
                 #printState(state)
                 return listOfStates
             elif(not state.checkFlag() == heurFlag):  #if the heurflag changes, delete rest of heap and change global flag
                 h = []
                 heurFlag = state.checkFlag()
                 #print(heurFlag)
-                heapq.heappush(h, (state.getHeur() + curr_depth, state, "listOfStates", curr_depth))
-                #print("flag has changed!!!!!!!!!!!!!!!!!!!")
+                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
                 #print(heurFlag)
                 #print(len(h))
-                #exit()
                 break
             else:
-                heapq.heappush(h, (state.getHeur() + curr_depth, state, "listOfStates", curr_depth))
+                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
     return listOfStates
-
-
-
-
 
 
 def printState(state):
     #print(state.getHeur())
-    print "heurFlag = ", heurFlag
+    #print "heurFlag = ", heurFlag
     for floor in state.floors:
         print floor.number
         print "elevators: "

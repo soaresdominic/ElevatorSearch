@@ -1,8 +1,3 @@
-from enum import Enum
-import random
-import numpy
-
-
 class elevator:
     
     def __init__(self, capacity, serviceFloors, name, startFloor):

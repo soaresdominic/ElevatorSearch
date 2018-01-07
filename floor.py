@@ -1,8 +1,3 @@
-from enum import Enum
-import random
-import numpy
-
-
 class floor:
     
     def __init__(self, number, secure):
