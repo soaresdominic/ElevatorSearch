@@ -15,7 +15,17 @@ Modifiable Pieces:
 383. Main object instantiation – the value passed in is the total number of floors
                 - must also change second number in line 464 and 475
 396. First person – The values for the first person added to the system represent their starting floor, type of person (e – employee, v – vip, g – guest), name (don’t change), goal floor
-433. Total time – The number represents how many iterations the program does before stopping
-459. Create person time – The number represents the time at which no more people will be added to the system
-460. % change add person – The second number is the denominator for the chance a person is added to the system each iteration. E.g. 60 = 1/60 chance
-466. Type of person – The odds for the people are modifiable based on the following if else statement
+434. Total time – The number represents how many iterations the program does before stopping
+460. Create person time – The number represents the time at which no more people will be added to the system
+461. % change add person – The second number is the denominator for the chance a person is added to the system each iteration. E.g. 60 = 1/60 chance
+467. Type of person – The odds for the people are modifiable based on the following if else statement
+
+Useful Modifiable Print Statements
+[line number, type, description]
+406. Print state - prints the state of system directly after adding a person
+419. Print solution length - prints the length of the current solution moveset
+421,422. Print states - prints the beginning and end state of a solution
+429. Print state - prints the next state after a move forward
+438. Print time - prints the iteration number
+547. Print heuristic value - prints the heuristic value for the printed state
+548. Print heuristic flag - prints the heuristic flag for the printed state

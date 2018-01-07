@@ -416,12 +416,13 @@ def startDay(state):
 
             print("Computing the moveset solution...")
             listOfStates = AStar2(currState)  #get the next states to go to
+            #print(len(listOfStates))
             print("Done computing solution")
             #printState(listOfStates[0])
             #printState(listOfStates[-1])
             listOfStates.pop(0)  #get rid of initial state we passed in
             currState = listOfStates.pop(0)  #move forward 1 state
-            printState(currState)
+            #printState(currState)
         elif(len(listOfStates) > 1):  #if there are no new people get the next state
             currState = listOfStates.pop(0)  #move forward 1
             #print("Test")
@@ -429,7 +430,7 @@ def startDay(state):
         elif(len(listOfStates) == 1): #if we're at the last state
             currState = listOfStates.pop(0)  #move forward 1
             printState(currState)
-            break
+            
         elif(time > 10000):  #if done for the day
             print("Done for the day")
             break
@@ -456,7 +457,7 @@ def updateGlobalElevators(state):
 #generates a person
 def generate(time):
     global peopleG
-    if(time < 1300):
+    if(time < 5000):
         rd = random.randint(1,50)
         if(rd == 1):  #make the person
             ltmp = []
@@ -467,7 +468,7 @@ def generate(time):
             if(typep == 1):
                 tmp.append("e")
             elif(typep == 2):
-                tmp.append("g")
+                tmp.append("e")
             else:
                 tmp.append("v")
 
@@ -481,7 +482,7 @@ def generate(time):
     else:
         return [[]]
 
-
+#list of states should only 
 def AStar2(state):
     h = []
     global heurFlag
@@ -507,13 +508,17 @@ def AStar2(state):
         tmpf = heurFlag
         
         curr_st = curr_state[1]
+        curr_depth = curr_state[3]
 
         #print(heurFlag)
         #printState(curr_st)
 
+
+        listOfStates = listOfStates[:curr_depth]
         listOfStates.append(curr_st)  #this is the solution moveset of states
+
         curr_moves = curr_state[2]
-        curr_depth = curr_state[3]
+        
         new_states = []
         new_states = curr_st.findMoves()  #returns a list of [[states, the move]]
         for st in new_states:
@@ -523,17 +528,18 @@ def AStar2(state):
                 #print(state.getHeur())
                 print(curr_moves + move)
                 #printState(state)
+                listOfStates.append(state)
                 return listOfStates
             elif(not state.checkFlag() == heurFlag):  #if the heurflag changes, delete rest of heap and change global flag
                 h = []
                 heurFlag = state.checkFlag()
                 #print(heurFlag)
-                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
+                heapq.heappush(h, (state.getHeur(), state, curr_moves + move + "\n", curr_depth + 1))
                 #print(heurFlag)
                 #print(len(h))
                 break
             else:
-                heapq.heappush(h, (state.getHeur() + curr_depth, state, curr_moves + move + "\n", curr_depth))
+                heapq.heappush(h, (state.getHeur(), state, curr_moves + move + "\n", curr_depth + 1))
     return listOfStates
 
 
